@@ -8,6 +8,7 @@ import nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 import umap.umap_ as umap
+from sklearn.metrics.pairwise import cosine_similarity
 
 class LatentSemanticAnalyzer():
 
@@ -63,34 +64,53 @@ class LatentSemanticAnalyzer():
         max_df = 0.5,
         smooth_idf=True)
 
-        X = vectorizer.fit_transform(df['clean_doc'])
-        print(type(df['clean_doc']))
+        tfidf_matrix = vectorizer.fit_transform(df['clean_doc'])
 
         # SVD represent documents and terms in vectors
         svd_model = TruncatedSVD(n_components=20, algorithm='randomized', n_iter=100, random_state=122)
 
-        svd_model.fit(X)
+        svd_model.fit(tfidf_matrix)
 
-        return vectorizer, svd_model
+        return vectorizer, tfidf_matrix, svd_model
+
+    def get_top_terms_for_topic(self, vectorizer, topic_term_matrix):
+
+        top_terms = []
+        terms = vectorizer.get_feature_names()
+        for i, comp in enumerate(topic_term_matrix):
+            terms_comp = zip(terms, comp)
+            sorted_terms = sorted(terms_comp, key= lambda x:x[1], reverse=True)[:7]
+            top_terms.append(' '.join([term_tuple[0] for term_tuple in sorted_terms]))
+
+        return top_terms
 
 if __name__ == '__main__':
 
     analyzer = LatentSemanticAnalyzer()
     df = analyzer.get_data()
     df = analyzer.clean_data(df)
-    vectorizer, svd_model = analyzer.learn(df)
 
-    terms = vectorizer.get_feature_names()
+    vectorizer, tfidf_matrix, svd_model = analyzer.learn(df)
 
-    test_doc = ['thanks for the space chip sale']
+    document_topic_matrix = svd_model.transform(tfidf_matrix)
+    topic_term_matrix = svd_model.components_
+    print(document_topic_matrix.shape)
+    print(topic_term_matrix.shape)
+
+    test_doc = ['thanks for the space chip sale', 'good people know good windows']
 
     vectorized_test_doc = vectorizer.transform(test_doc)
-    print(vectorized_test_doc)
+    print(vectorized_test_doc.shape)
 
-    # for i, comp in enumerate(svd_model.components_):
-    #     terms_comp = zip(terms, comp)
-    #     sorted_terms = sorted(terms_comp, key= lambda x:x[1], reverse=True)[:7]
-    #     print("Topic "+str(i)+": ")
-    #     for t in sorted_terms:
-    #         print(t[0], end=' ')
-    #     print('\n')
+    top_terms_for_topic = analyzer.get_top_terms_for_topic(vectorizer, topic_term_matrix)
+    print(top_terms_for_topic)
+
+    cosine_similarity_matrix = cosine_similarity(vectorized_test_doc, topic_term_matrix)
+    print(cosine_similarity_matrix)
+
+    topic_indices = cosine_similarity_matrix.argmax(axis=1)
+    topic_predictions = [{'topic_index': topic_index, 'top_terms': top_terms_for_topic[topic_index],
+                        'cosine_similarity': cosine_similarity_matrix[i][topic_index]}
+                        for i, topic_index in enumerate(topic_indices)]
+
+    print(topic_predictions)
