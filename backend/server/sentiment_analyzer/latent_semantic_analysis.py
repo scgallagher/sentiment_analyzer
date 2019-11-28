@@ -96,16 +96,21 @@ class LatentSemanticAnalyzer():
         self.document_topic_matrix = svd_model.transform(tfidf_matrix)
         self.topic_term_matrix = svd_model.components_
 
-    def get_top_terms_for_topic(self, topic_term_matrix):
+    def get_topic_descriptions(self):
 
-        top_terms = []
+        topic_descriptions = []
         terms = self.vectorizer.get_feature_names()
-        for i, comp in enumerate(topic_term_matrix):
+        for i, comp in enumerate(self.topic_term_matrix):
             terms_comp = zip(terms, comp)
             sorted_terms = sorted(terms_comp, key= lambda x:x[1], reverse=True)[:7]
-            top_terms.append(' '.join([term_tuple[0] for term_tuple in sorted_terms]))
+            top_terms = ' '.join([term_tuple[0] for term_tuple in sorted_terms])
+            topic_dict = {
+                'index': str(i),
+                'top_terms': top_terms
+            }
+            topic_descriptions.append(topic_dict)
 
-        return top_terms
+        return topic_descriptions
 
     def predict_topics(self, docs):
 
@@ -115,9 +120,9 @@ class LatentSemanticAnalyzer():
 
         topic_indices = cosine_similarity_matrix.argmax(axis=1)
 
-        top_terms_for_topic = self.get_top_terms_for_topic(self.topic_term_matrix)
+        top_terms_for_topic = self.get_topic_descriptions()
 
-        topic_predictions = [{'topic_index': int(topic_index), 'top_terms': top_terms_for_topic[topic_index],
+        topic_predictions = [{'topic': top_terms_for_topic[topic_index],
                             'cosine_similarity': cosine_similarity_matrix[i][topic_index]}
                             for i, topic_index in enumerate(topic_indices)]
 

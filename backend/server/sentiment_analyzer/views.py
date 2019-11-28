@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views import View
-from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest
 from .latent_semantic_analysis import LatentSemanticAnalyzer
 import json
 
@@ -17,4 +17,8 @@ class PredictionView(View):
         topic_predictions = self.__class__.analyzer.predict_topics(docs)
 
         return JsonResponse({"topic_predictions": topic_predictions})
-        return HttpResponse()
+
+    def get(self, request):
+
+        topic_descriptions = self.__class__.analyzer.get_topic_descriptions()
+        return JsonResponse({'topics': topic_descriptions})
