@@ -38,7 +38,7 @@ class LatentSemanticAnalyzer():
             self.dataset = fetch_20newsgroups(shuffle=True, random_state=1, remove=('headers', 'footers', 'quotes'))
         documents = self.dataset.data
 
-        df = pd.DataFrame({'document':documents})
+        df = pd.DataFrame({'documents':documents})
         df = self.clean_data(df)
 
         return df
@@ -49,7 +49,7 @@ class LatentSemanticAnalyzer():
         stop_words = stopwords.words('english')
 
         # tokenization
-        tokenized_doc = df['clean_doc'].apply(lambda x: x.split())
+        tokenized_doc = df['clean_docs'].apply(lambda x: x.split())
         # remove stop-words
         tokenized_doc = tokenized_doc.apply(lambda x: [item for item in x if item not in stop_words])
         # de-tokenization
@@ -58,20 +58,20 @@ class LatentSemanticAnalyzer():
             t = ' '.join(tokenized_doc[i])
             detokenized_doc.append(t)
 
-        df['clean_doc'] = detokenized_doc
+        df['clean_docs'] = detokenized_doc
 
         return df
 
     def clean_data(self, df):
 
         # remove everything except alphabets`
-        df['clean_doc'] = df['document'].str.replace("[^a-zA-Z#]", " ")
+        df['clean_docs'] = df['documents'].str.replace("[^a-zA-Z#]", " ")
 
         # remove short words
-        df['clean_doc'] = df['clean_doc'].apply(lambda x: ' '.join([w for w in x.split() if len(w)>3]))
+        df['clean_docs'] = df['clean_docs'].apply(lambda x: ' '.join([w for w in x.split() if len(w)>3]))
 
         # make all text lowercase
-        df['clean_doc'] = df['clean_doc'].apply(lambda x: x.lower())
+        df['clean_docs'] = df['clean_docs'].apply(lambda x: x.lower())
 
         df = self.strip_stop_words(df)
 
@@ -86,7 +86,7 @@ class LatentSemanticAnalyzer():
         max_df = 0.5,
         smooth_idf=True)
 
-        tfidf_matrix = self.vectorizer.fit_transform(df['clean_doc'])
+        tfidf_matrix = self.vectorizer.fit_transform(df['clean_docs'])
 
         # SVD represent documents and terms in vectors
         svd_model = TruncatedSVD(n_components=20, algorithm='randomized', n_iter=100, random_state=122)
@@ -113,6 +113,10 @@ class LatentSemanticAnalyzer():
         return topic_descriptions
 
     def predict_topics(self, docs):
+
+        df = pd.DataFrame({'documents': docs})
+        df = self.clean_data(df)
+        docs = df['clean_docs'].tolist()
 
         vectorized_docs = self.vectorizer.transform(docs)
 
