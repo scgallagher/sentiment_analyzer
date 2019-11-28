@@ -38,7 +38,10 @@ class LatentSemanticAnalyzer():
             self.dataset = fetch_20newsgroups(shuffle=True, random_state=1, remove=('headers', 'footers', 'quotes'))
         documents = self.dataset.data
 
-        return pd.DataFrame({'document':documents})
+        df = pd.DataFrame({'document':documents})
+        df = self.clean_data(df)
+
+        return df
 
     def strip_stop_words(self, df):
 
@@ -70,9 +73,13 @@ class LatentSemanticAnalyzer():
         # make all text lowercase
         df['clean_doc'] = df['clean_doc'].apply(lambda x: x.lower())
 
-        return self.strip_stop_words(df)
+        df = self.strip_stop_words(df)
 
-    def learn(self, df):
+        return df
+
+    def learn(self):
+
+        df = self.get_data()
 
         self.vectorizer = TfidfVectorizer(stop_words='english',
         max_features= 1000, # keep top 1000 terms
@@ -119,10 +126,7 @@ class LatentSemanticAnalyzer():
 if __name__ == '__main__':
 
     analyzer = LatentSemanticAnalyzer()
-    df = analyzer.get_data()
-    df = analyzer.clean_data(df)
-
-    analyzer.learn(df)
+    analyzer.learn()
 
     test_docs = ['thanks for the space chip sale', 'good people know good windows']
     topic_predictions = analyzer.predict_topics(test_docs)
