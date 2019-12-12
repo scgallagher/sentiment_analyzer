@@ -7,7 +7,6 @@ from nltk.corpus import stopwords
 import nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
-import umap.umap_ as umap
 from sklearn.metrics.pairwise import cosine_similarity
 import logging
 
